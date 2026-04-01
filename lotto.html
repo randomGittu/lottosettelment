@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lottery Settlement</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f0f0;font-family:Arial,sans-serif;font-size:11px;padding-bottom:80px}
+.topbar{background:#1a1a2e;color:#fff;position:sticky;top:0;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;gap:6px}
+.topbar h1{font-size:11px;letter-spacing:1px;flex:1}
+.topbar input[type=date]{background:#2d2d50;border:1px solid #555;border-radius:4px;color:#aef;font-size:10px;padding:2px 5px;outline:none;color-scheme:dark}
+.btn-clear-all{background:#8a0000;color:#fff;border:none;border-radius:5px;padding:4px 8px;font-size:9px;font-weight:bold;cursor:pointer;white-space:nowrap}
+.sheet{background:#fff;margin:4px;border:2px solid #000;border-radius:2px;overflow:hidden}
+.sheet-title{text-align:center;font-weight:bold;font-size:12px;padding:3px;border-bottom:2px solid #000;letter-spacing:1px}
+table.grid{width:100%;border-collapse:collapse;border-bottom:1px solid #000}
+table.grid th,table.grid td{border:1px solid #888;text-align:center;padding:1px 0;font-size:9px;height:18px}
+table.grid th{background:#e0e0e0;font-weight:bold;font-size:8px}
+.row-label{background:#e8e8e8;font-weight:bold;font-size:8px;text-align:left;padding-left:3px;white-space:nowrap;width:50px;min-width:50px}
+.game-header{background:#d0d0d0;font-weight:bold;font-size:8px;line-height:1.2}
+.price-tag{color:#8a0000;font-size:7px;font-weight:bold;display:block}
+input.cell{width:100%;border:none;background:transparent;text-align:center;font-size:9px;font-family:Arial,sans-serif;padding:0;outline:none;color:#000;cursor:pointer}
+input.cell:focus,input.cell.active{background:#fffacc;outline:2px solid #f90;border-radius:2px}
+input.cell.has-val{color:#00008b;font-weight:bold}
+input.cell.sales-cell{background:#f0fff0;color:#006600;font-weight:bold}
+input.cell.sales-cell.has-val{color:#006600;font-weight:bold}
+input.cell[readonly].sales-cell{background:#e8f4e8;color:#145214;font-weight:bold;cursor:default}
+.summary-section{border-top:2px solid #000;padding:4px;background:#fff;display:flex;flex-direction:column;gap:3px}
+.sum-row{display:flex;gap:3px}
+.sum-cell{flex:1;border:1px solid #bbb;border-radius:4px;padding:3px 4px;background:#fafafa;display:flex;flex-direction:column;gap:2px}
+.field-label{font-size:7px;font-weight:bold;color:#555;text-transform:uppercase;letter-spacing:.03em}
+input.sinp{display:block;width:100%;border:1px solid #999;border-radius:3px;padding:3px 4px;font-size:11px;font-family:'Courier New',monospace;font-weight:bold;color:#000!important;background:#fff!important;outline:none;-webkit-text-fill-color:#000!important}
+input.sinp:focus{border-color:#f90;outline:1px solid #f90}
+input.sinp.auto{background:#e8f4e8!important;color:#145214!important;-webkit-text-fill-color:#145214!important}
+input.sinp.total-inp{font-size:12px;color:#8a0000!important;-webkit-text-fill-color:#8a0000!important;background:#fef0f0!important}
+.act-btn{width:100%;padding:3px 2px;border:none;border-radius:3px;color:#fff;font-size:8px;font-weight:bold;cursor:pointer;letter-spacing:.02em;margin-top:1px}
+.act-btn:active{opacity:.8}
+.act-btn.blue{background:#00488a}
+.act-btn.green{background:#145214}
+.act-btn.orange{background:#7a3800}
+.act-btn.red{background:#8a0000}
+.lotto-ab{display:flex;gap:3px;margin-top:1px}
+.lotto-ab>div{flex:1}
+.bottom-btns{display:flex;gap:4px;padding:4px;background:#f0f0f0;border-top:1px solid #ccc}
+.bb{flex:1;padding:7px 3px;border:none;border-radius:5px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;text-align:center}
+.bb.green{background:#145214}
+.bb.purple{background:#4a0080}
+.bb:active{opacity:.8}
+.toast{display:none;position:fixed;top:56px;left:8px;right:8px;background:#fffbe6;border:2px solid #f90;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:bold;color:#333;text-align:center;z-index:500}
+.toast.show{display:block}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);z-index:998;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:24px 18px;max-width:290px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.modal-icon{font-size:2rem;margin-bottom:4px}
+.modal-box h2{font-size:14px;font-weight:900;margin-bottom:6px;color:#8a0000}
+.modal-box p{font-size:11px;color:#555;margin-bottom:16px;line-height:1.5}
+.modal-btns{display:flex;gap:10px}
+.modal-yes{flex:1;padding:10px;background:#8a0000;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer}
+.modal-no{flex:1;padding:10px;background:#e0e0e0;color:#333;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer}
+#page-nextday{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f0f0;z-index:200;overflow-y:auto;padding-bottom:80px}
+.nd-topbar{background:#145214;color:#fff;position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:6px 10px}
+.nd-topbar h1{font-size:11px;letter-spacing:1px}
+.nd-back{background:#fff;color:#145214;border:none;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:bold;cursor:pointer}
+.nd-note{font-size:9px;color:#666;text-align:center;padding:3px 6px;background:#fffbe6;border-bottom:1px solid #ddd;font-style:italic}
+#vp{position:fixed;bottom:0;left:0;right:0;z-index:300;background:rgba(20,20,40,0.97);border-top:2px solid #444;padding:4px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .2s;transform:translateZ(0)}
+#vp.listening{border-color:#e00}
+#vp.heard{border-color:#f90}
+#vp.confirmed{border-color:#0a0}
+.vp-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:500px;gap:6px}
+.vp-cell-info{font-size:9px;color:#aaa;text-transform:uppercase;white-space:nowrap}
+.vp-cell-info span{color:#6cf;font-weight:bold}
+.vp-heard-num{font-family:'Courier New',monospace;font-size:1.2rem;font-weight:bold;color:#f90;min-width:60px;text-align:center}
+.vp-heard-num.empty{color:#555;font-size:.7rem}
+.vp-heard-num.ok{color:#0d0}
+.vp-stat{font-size:8px;color:#aaa;text-align:center;min-height:.8rem}
+.vp-stat.listening{color:#f44;animation:pulse 1s infinite}
+.vp-stat.heard{color:#f90}
+.vp-stat.ok{color:#0d0}
+.vp-stat.warn{color:#f44}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.vp-controls{display:flex;gap:5px;width:100%;max-width:500px;align-items:center}
+.vbtn{flex:1;padding:6px 0;border-radius:6px;border:none;font-size:10px;font-weight:bold;cursor:pointer;text-transform:uppercase}
+.vbtn:active{opacity:.82}
+.vbtn-mic{background:#c00;color:#fff}
+.vbtn-mic.on{background:#400;color:#f44;border:2px solid #f44}
+.vbtn-ok{background:#080;color:#fff}
+.vbtn-ok:disabled{background:#333;color:#666;cursor:default}
+.vbtn-x{background:#333;color:#aaa;border:1px solid #555;flex:0 0 36px}
+.type-inp{flex:2;background:#2a2a3e;border:1px solid #555;border-radius:5px;color:#fff;font-size:12px;padding:5px 8px;outline:none;font-family:'Courier New',monospace}
+.type-inp:focus{border-color:#6cf}
+.type-sub{background:#006;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-weight:bold;font-size:10px;cursor:pointer;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="clear-modal">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <h2>Clear Everything?</h2>
+    <p>This will erase <strong>ALL numbers</strong> on this page.<br>This <strong>cannot be undone.</strong></p>
+    <div class="modal-btns">
+      <button class="modal-no" onclick="closeModal()">✕ NO</button>
+      <button class="modal-yes" onclick="doClearAll()">✓ YES, CLEAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEXT DAY PAGE -->
+<div id="page-nextday">
+  <div class="nd-topbar">
+    <h1>📋 NEXT DAY SETTLEMENT</h1>
+    <button class="nd-back" onclick="closeNextDay()">← BACK</button>
+  </div>
+  <div class="nd-note" id="nd-note">Ending #s from today pre-filled</div>
+  <div class="sheet">
+    <div class="sheet-title">Lottery Settlement — Next Day</div>
+    <table class="grid" id="nd-tbl1"></table>
+    <table class="grid" id="nd-tbl2"></table>
+    <table class="grid" id="nd-tbl3"></table>
+    <table class="grid" id="nd-tbl4"></table>
+    <div class="summary-section">
+      <div class="sum-row">
+        <div class="sum-cell">
+          <div class="field-label">INSTANT</div>
+          <input id="nd-instant" class="sinp auto" type="text" placeholder="0" data-id="nd-instant" readonly>
+          <button class="act-btn blue" onclick="ndCalc('instant')">▶ RETRIEVE INSTANT</button>
+        </div>
+        <div class="sum-cell">
+          <div class="field-label">ONLINE (manual)</div>
+          <input id="nd-online" class="sinp" type="text" placeholder="type" data-id="nd-online" onfocus="activateCell(this)" onclick="activateCell(this)">
+        </div>
+        <div class="sum-cell">
+          <div class="field-label">TOTAL SALES</div>
+          <input id="nd-totalsales" class="sinp auto" type="text" placeholder="0" data-id="nd-totalsales" readonly>
+          <button class="act-btn green" onclick="ndCalc('totalsales')">▶ RETRIEVE</button>
+        </div>
+      </div>
+      <div class="sum-row">
+        <div class="sum-cell">
+          <div class="field-label">LOTTO PAID OUT</div>
+          <input id="nd-lottopaid" class="sinp auto" type="text" placeholder="0" data-id="nd-lottopaid" readonly>
+          <div class="lotto-ab">
+            <div><div class="field-label">A</div><input id="nd-lotto-a" class="sinp" type="text" placeholder="0" data-id="nd-lotto-a" onfocus="activateCell(this)" onclick="activateCell(this)" style="color:#000!important;-webkit-text-fill-color:#000!important;background:#fff!important"></div>
+            <div><div class="field-label">B</div><input id="nd-lotto-b" class="sinp" type="text" placeholder="0" data-id="nd-lotto-b" onfocus="activateCell(this)" onclick="activateCell(this)" style="color:#000!important;-webkit-text-fill-color:#000!important;background:#fff!important"></div>
+          </div>
+          <button class="act-btn orange" onclick="ndCalc('lotto')">▶ SUM A+B</button>
+        </div>
+        <div class="sum-cell">
+          <div class="field-label" style="font-size:9px;font-weight:900">TOTAL</div>
+          <input id="nd-total" class="sinp total-inp" type="text" placeholder="0" data-id="nd-total" readonly>
+          <button class="act-btn red" onclick="ndCalc('total')">▶ RETRIEVE TOTAL</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-btns">
+      <button class="bb green" onclick="saveNextDay()">💾 SAVE NEXT DAY</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN PAGE -->
+<div class="topbar">
+  <h1>🎰 LOTTERY SETTLEMENT</h1>
+  <input type="date" id="settle-date">
+  <button class="btn-clear-all" onclick="askClearAll()">🗑 CLEAR</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="sheet">
+  <div class="sheet-title">Lottery Settlement</div>
+  <table class="grid" id="tbl1"></table>
+  <table class="grid" id="tbl2"></table>
+  <table class="grid" id="tbl3"></table>
+  <table class="grid" id="tbl4"></table>
+
+  <div class="summary-section">
+    <div class="sum-row">
+      <div class="sum-cell">
+        <div class="field-label">INSTANT</div>
+        <input id="s-instant" class="sinp auto" type="text" inputmode="numeric" placeholder="0" data-id="s-instant" readonly>
+        <button class="act-btn blue" onclick="retrieveInstant()">▶ RETRIEVE INSTANT</button>
+      </div>
+      <div class="sum-cell">
+        <div class="field-label">ONLINE (manual)</div>
+        <input id="s-online" class="sinp" type="text" inputmode="numeric" placeholder="type" data-id="s-online" onfocus="activateCell(this)" onclick="activateCell(this)">
+      </div>
+      <div class="sum-cell">
+        <div class="field-label">TOTAL SALES</div>
+        <input id="s-totalsales" class="sinp auto" type="text" inputmode="numeric" placeholder="0" data-id="s-totalsales" readonly>
+        <button class="act-btn green" onclick="retrieveTotalSales()">▶ RETRIEVE</button>
+      </div>
+    </div>
+    <div class="sum-row">
+      <div class="sum-cell">
+        <div class="field-label">LOTTO PAID OUT</div>
+        <input id="s-lottopaid" class="sinp auto" type="text" inputmode="numeric" placeholder="0" data-id="s-lottopaid" readonly>
+        <div class="lotto-ab">
+          <div><div class="field-label">A</div><input id="s-lotto-a" class="sinp" type="text" inputmode="numeric" placeholder="0" data-id="s-lotto-a" onfocus="activateCell(this)" onclick="activateCell(this)" style="color:#000!important;-webkit-text-fill-color:#000!important;background:#fff!important"></div>
+          <div><div class="field-label">B</div><input id="s-lotto-b" class="sinp" type="text" inputmode="numeric" placeholder="0" data-id="s-lotto-b" onfocus="activateCell(this)" onclick="activateCell(this)" style="color:#000!important;-webkit-text-fill-color:#000!important;background:#fff!important"></div>
+        </div>
+        <button class="act-btn orange" onclick="retrieveLottoPaidOut()">▶ SUM A+B</button>
+      </div>
+      <div class="sum-cell">
+        <div class="field-label" style="font-size:9px;font-weight:900">TOTAL</div>
+        <input id="s-total" class="sinp total-inp" type="text" inputmode="numeric" placeholder="0" data-id="s-total" readonly>
+        <button class="act-btn red" onclick="retrieveTotal()">▶ RETRIEVE TOTAL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-btns">
+    <button class="bb green" onclick="saveData()">💾 SAVE</button>
+    <button class="bb purple" onclick="openNextDay()">📋 NEXT DAY →</button>
+  </div>
+</div>
+
+<!-- FLOATING VOICE BAR -->
+<div id="vp">
+  <div class="vp-top">
+    <div class="vp-cell-info">CELL: <span id="vp-cell">tap any cell</span></div>
+    <div class="vp-heard-num empty" id="vp-num">—</div>
+    <div class="vp-stat" id="vp-stat">tap cell to start</div>
+  </div>
+  <div class="vp-controls">
+    <button class="vbtn vbtn-mic" id="btn-mic" onclick="toggleMic()">🎙 SPEAK</button>
+    <button class="vbtn vbtn-ok" id="btn-ok" onclick="confirmNum()" disabled>✓ OK</button>
+    <button class="vbtn vbtn-x" onclick="clearHeard()">✕</button>
+    <input class="type-inp" id="type-inp" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="type number…">
+    <button class="type-sub" onclick="submitTyped()">↵</button>
+  </div>
+</div>
+
+<script>
+// ── GAME CONFIG ──
+// Each game: { price, max (last ticket number), total tickets }
+// max = total - 1 (since tickets go 0 to max)
+const GAME_CONFIG = {
+  1:  { price:50, max:19 },
+  2:  { price:50, max:19 },
+  3:  { price:50, max:19 },
+  4:  { price:30, max:19 },
+  5:  { price:30, max:19 },
+  6:  { price:30, max:19 },
+  7:  { price:20, max:29 },
+  8:  { price:20, max:29 },
+  9:  { price:20, max:29 },
+  10: { price:20, max:29 },
+  11: { price:20, max:29 },
+  12: { price:20, max:29 },
+  13: { price:20, max:29 },
+  14: { price:20, max:29 },
+  15: { price:10, max:49 },
+  16: { price:10, max:49 },
+  17: { price:10, max:49 },
+  18: { price:10, max:49 },
+  19: { price:10, max:49 },
+  20: { price:10, max:49 },
+  21: { price:10, max:49 },
+  22: { price:10, max:49 },
+  23: { price:5,  max:99 },
+  24: { price:5,  max:99 },
+  25: { price:5,  max:99 },
+  26: { price:5,  max:99 },
+  27: { price:5,  max:99 },
+  28: { price:5,  max:99 },
+  29: { price:5,  max:99 },
+  30: { price:3,  max:99 },
+  31: { price:2,  max:99 },
+  32: { price:1,  max:199 },
+  33: { price:2,  max:99 },
+  34: { price:5,  max:99 },
+  35: { price:10, max:49 },
+  36: { price:20, max:29 },
+};
+
+// ── CALCULATE SALES ──
+// ending < opening → new batch was added
+// ending = 0 → roll finished (last ticket sold)
+function calcSales(game, opening, ending) {
+  const cfg = GAME_CONFIG[game];
+  if (!cfg) return 0;
+  const op = parseInt(opening);
+  const en = parseInt(ending);
+  if (isNaN(op) || isNaN(en)) return 0;
+
+  let ticketsSold = 0;
+
+  if (en === 0) {
+    // Roll finished — sold from opening to last ticket
+    ticketsSold = cfg.max - op;
+  } else if (en > op) {
+    // Normal case — went up
+    ticketsSold = en - op;
+  } else if (en < op) {
+    // New batch added — old batch finished + new batch sold
+    ticketsSold = (cfg.max - op) + en;
+  } else {
+    // en === op → nothing sold
+    ticketsSold = 0;
+  }
+
+  return ticketsSold * cfg.price;
+}
+
+// ── AUTO FILL SALES when ending is entered ──
+function autoCalcSales(game, prefix) {
+  prefix = prefix || '';
+  const openInp = document.querySelector('[data-id="'+prefix+'g'+game+'-open"]');
+  const endInp  = document.querySelector('[data-id="'+prefix+'g'+game+'-end"]');
+  const salesInp= document.querySelector('[data-id="'+prefix+'g'+game+'-sales"]');
+  if (!openInp || !endInp || !salesInp) return;
+  if (openInp.value === '' || endInp.value === '') return;
+  const sales = calcSales(game, openInp.value, endInp.value);
+  salesInp.value = '$' + sales.toLocaleString();
+  salesInp.classList.add('has-val');
+}
+
+const BANDS=[
+  {tbl:'tbl1',games:[1,2,3,4,5,6,7,8,9]},
+  {tbl:'tbl2',games:[10,11,12,13,14,15,16,17,18]},
+  {tbl:'tbl3',games:[19,20,21,22,23,24,25,26,27]},
+  {tbl:'tbl4',games:[28,29,30,31,32,33,34,35,36]},
+];
+const ROW_LABELS=['ENDING #','OPENING #','SALES'];
+const ROW_KEYS=['end','open','sales'];
+
+function buildBand(tblId, games, prefix){
+  prefix = prefix || '';
+  const tbl=document.getElementById(tblId);
+  if(!tbl)return;tbl.innerHTML='';
+  const thead=tbl.createTHead();const hr=thead.insertRow();
+  const lh=document.createElement('th');lh.className='row-label';lh.textContent='GAME';hr.appendChild(lh);
+  games.forEach(g=>{
+    const th=document.createElement('th');
+    th.className='game-header';
+    const cfg=GAME_CONFIG[g];
+    th.innerHTML=g+'<span class="price-tag">$'+cfg.price+'</span>';
+    hr.appendChild(th);
+  });
+  const tbody=tbl.createTBody();
+  ROW_KEYS.forEach((rk,ri)=>{
+    const tr=tbody.insertRow();
+    const lbl=tr.insertCell();lbl.className='row-label';lbl.textContent=ROW_LABELS[ri];
+    games.forEach(g=>{
+      const td=tr.insertCell();
+      td.appendChild(makeCell(prefix+'g'+g+'-'+rk, rk==='sales', g, rk, prefix));
+    });
+  });
+}
+
+function makeCell(id, isSales, game, rk, prefix){
+  prefix = prefix || '';
+  const inp=document.createElement('input');
+  inp.type='text';
+  inp.dataset.id=id;
+  inp.dataset.game=game;
+  inp.dataset.rk=rk;
+  inp.dataset.prefix=prefix;
+
+  if(isSales){
+    // Sales is readonly — auto calculated
+    inp.readOnly=true;
+    inp.inputMode='';
+    inp.placeholder='auto';
+    inp.className='cell sales-cell';
+  } else {
+    inp.inputMode='numeric';
+    inp.placeholder='';
+    inp.className='cell';
+    inp.addEventListener('focus',()=>activateCell(inp));
+    inp.addEventListener('click',()=>activateCell(inp));
+    inp.addEventListener('input',()=>{
+      inp.value?inp.classList.add('has-val'):inp.classList.remove('has-val');
+      // auto calc sales whenever opening or ending changes
+      autoCalcSales(game, prefix);
+    });
+    inp.addEventListener('change',()=>autoCalcSales(game, prefix));
+  }
+  return inp;
+}
+
+function buildTables(){BANDS.forEach(b=>buildBand(b.tbl,b.games,''));}
+function buildNDTables(){BANDS.forEach(b=>buildBand('nd-'+b.tbl,b.games,'nd-'));}
+
+let allCells=[];
+function buildOrder(){
+  allCells=Array.from(document.querySelectorAll('input.cell:not([readonly])'));
+}
+
+let activeCell=null,heardVal=null;
+function activateCell(inp){
+  if(inp.readOnly)return;
+  if(activeCell)activeCell.classList.remove('active');
+  activeCell=inp;inp.classList.add('active');
+  document.getElementById('vp-cell').textContent=inp.dataset.id||'?';
+  heardVal=null;document.getElementById('btn-ok').disabled=true;
+  setNum('—','empty');setStat('tap 🎙 or type','');
+  document.getElementById('vp').className='';
+  inp.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function nextCell(){
+  const i=allCells.indexOf(activeCell);
+  if(i>=0&&i<allCells.length-1){allCells[i+1].focus();}
+  else{if(activeCell)activeCell.classList.remove('active');activeCell=null;document.getElementById('vp-cell').textContent='✅ Done!';setStat('Sheet complete!','ok');}
+}
+
+// VOICE
+let recog=null,isListening=false;
+function toggleMic(){
+  if(!activeCell){setStat('⚠️ Tap a cell first!','warn');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setStat('⚠️ Use Chrome','warn');return;}
+  if(isListening){recog.stop();return;}
+  if(!recog){recog=new SR();recog.lang='en-US';recog.continuous=false;recog.interimResults=true;recog.maxAlternatives=5;}
+  recog.onstart=()=>{isListening=true;document.getElementById('btn-mic').textContent='⏹ STOP';document.getElementById('btn-mic').classList.add('on');document.getElementById('vp').className='listening';setNum('…','');setStat('🎙 Listening…','listening');};
+  recog.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;const p=parseNum(t);setNum(p!==null?p:t,'');if(e.results[e.resultIndex]?.isFinal)handleFinal(e.results);};
+  recog.onerror=e=>{stopListen();setStat('⚠️ '+e.error,'warn');};
+  recog.onend=()=>stopListen();
+  try{recog.start();}catch(e){recog=null;setStat('⚠️ Mic error','warn');}
+}
+function stopListen(){isListening=false;document.getElementById('btn-mic').textContent='🎙 SPEAK';document.getElementById('btn-mic').classList.remove('on');}
+function handleFinal(results){
+  let best=null;
+  for(let i=0;i<results.length;i++)for(let j=0;j<results[i].length;j++){const n=parseNum(results[i][j].transcript);if(n!==null){best=n;break;}if(best)break;}
+  if(best){heardVal=best;setNum(best,'');document.getElementById('btn-ok').disabled=false;setStat('"'+best+'" — confirm?','heard');document.getElementById('vp').className='heard';}
+  else{heardVal=null;setNum('?','');setStat("Couldn't detect",'warn');}
+}
+function confirmNum(){
+  if(!activeCell||heardVal===null)return;
+  activeCell.value=heardVal;activeCell.classList.add('has-val');activeCell.classList.remove('active');
+  // trigger sales calc
+  const game=parseInt(activeCell.dataset.game);
+  const prefix=activeCell.dataset.prefix||'';
+  if(game) autoCalcSales(game, prefix);
+  setNum(heardVal+'✓','ok');document.getElementById('vp').className='confirmed';
+  setStat('✅ Confirmed!','ok');heardVal=null;document.getElementById('btn-ok').disabled=true;
+  setTimeout(()=>nextCell(),500);
+}
+function clearHeard(){
+  if(recog&&isListening)recog.stop();
+  heardVal=null;document.getElementById('btn-ok').disabled=true;
+  setNum('—','empty');setStat(activeCell?'tap 🎙 or type':'tap a cell','');
+  document.getElementById('vp').className='';
+}
+function parseNum(text){
+  if(!text)return null;
+  const t=text.trim().toLowerCase();
+  if(/^\d+$/.test(t))return t;
+  const W={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100,thousand:1000};
+  const parts=t.split(/[\s\-,]+/);
+  const SD=['zero','one','two','three','four','five','six','seven','eight','nine'];
+  if(parts.every(p=>SD.includes(p)||/^\d$/.test(p)))return parts.map(p=>/^\d$/.test(p)?p:W[p]).join('')||null;
+  let tot=0,cur=0,hw=false;
+  for(const p of parts){if(/^\d+$/.test(p))cur+=parseInt(p);else if(p in W){hw=true;const v=W[p];if(v===100)cur*=100;else if(v===1000){tot+=cur*1000;cur=0;}else cur+=v;}}
+  tot+=cur;if(tot>0||hw)return String(tot);
+  const m=t.match(/\d+/g);return m?m.join(''):null;
+}
+function submitTyped(){
+  if(!activeCell){setStat('⚠️ tap a cell first','warn');return;}
+  const v=document.getElementById('type-inp').value.trim();
+  if(!v||!/^\d+$/.test(v)){setStat('⚠️ numbers only','warn');return;}
+  activeCell.value=v;activeCell.classList.add('has-val');
+  const game=parseInt(activeCell.dataset.game);
+  const prefix=activeCell.dataset.prefix||'';
+  if(game) autoCalcSales(game, prefix);
+  document.getElementById('type-inp').value='';
+  setStat('✅ entered!','ok');
+  setTimeout(()=>nextCell(),350);
+}
+document.getElementById('type-inp').addEventListener('keydown',e=>{if(e.key==='Enter')submitTyped();});
+
+// MAIN CALCS
+function retrieveInstant(){
+  let t=0;
+  for(let g=1;g<=36;g++){
+    const i=document.querySelector('[data-id="g'+g+'-sales"]');
+    if(i&&i.value){
+      // strip $ and commas
+      const n=parseFloat(i.value.replace(/[$,]/g,''));
+      if(!isNaN(n))t+=n;
+    }
+  }
+  document.getElementById('s-instant').value='$'+t.toLocaleString();
+  showToast('✅ INSTANT = $'+t.toLocaleString());
+}
+function retrieveTotalSales(){
+  const iRaw=document.getElementById('s-instant').value.replace(/[$,]/g,'')||'0';
+  const oRaw=document.getElementById('s-online').value.replace(/[$,]/g,'')||'0';
+  const i=parseFloat(iRaw)||0;
+  const o=parseFloat(oRaw)||0;
+  document.getElementById('s-totalsales').value='$'+(i+o).toLocaleString();
+  showToast('✅ TOTAL SALES = $'+(i+o).toLocaleString());
+}
+function retrieveLottoPaidOut(){
+  const a=parseFloat(document.getElementById('s-lotto-a').value)||0;
+  const b=parseFloat(document.getElementById('s-lotto-b').value)||0;
+  document.getElementById('s-lottopaid').value='$'+(a+b).toLocaleString();
+  showToast('✅ LOTTO PAID OUT = $'+(a+b).toLocaleString());
+}
+function retrieveTotal(){
+  const ts=parseFloat((document.getElementById('s-totalsales').value||'0').replace(/[$,]/g,''))||0;
+  const lp=parseFloat((document.getElementById('s-lottopaid').value||'0').replace(/[$,]/g,''))||0;
+  document.getElementById('s-total').value='$'+(ts-lp).toLocaleString();
+  showToast('✅ TOTAL = $'+(ts-lp).toLocaleString());
+}
+
+// CLEAR
+function askClearAll(){document.getElementById('clear-modal').classList.add('show');}
+function closeModal(){document.getElementById('clear-modal').classList.remove('show');}
+function doClearAll(){
+  document.querySelectorAll('input.cell:not([readonly]),input.sinp').forEach(inp=>{inp.value='';inp.classList.remove('has-val','active');});
+  document.querySelectorAll('input.cell[readonly].sales-cell').forEach(inp=>{inp.value='';});
+  activeCell=null;heardVal=null;
+  document.getElementById('vp-cell').textContent='tap any cell';
+  setNum('—','empty');setStat('tap a cell','');
+  closeModal();showToast('🗑 Cleared!');
+}
+
+// NEXT DAY
+function openNextDay(){
+  buildNDTables();buildOrder();
+  const todayDate=document.getElementById('settle-date').value;
+  for(let g=1;g<=36;g++){
+    const src=document.querySelector('[data-id="g'+g+'-end"]');
+    const dst=document.querySelector('[data-id="nd-g'+g+'-open"]');
+    if(src&&dst&&src.value){
+      dst.value=src.value;
+      dst.classList.add('has-val');
+      dst.style.background='#fffacc';
+    }
+  }
+  document.getElementById('nd-note').textContent="📌 Today's ("+( todayDate||'today')+") ending #s are pre-filled as tomorrow's Opening #s.";
+  document.getElementById('page-nextday').style.display='block';
+  document.getElementById('page-nextday').scrollTop=0;
+}
+function closeNextDay(){document.getElementById('page-nextday').style.display='none';}
+function ndCalc(w){
+  if(w==='instant'){
+    let t=0;
+    for(let g=1;g<=36;g++){const i=document.querySelector('[data-id="nd-g'+g+'-sales"]');if(i&&i.value){const n=parseFloat(i.value.replace(/[$,]/g,''));if(!isNaN(n))t+=n;}}
+    document.getElementById('nd-instant').value='$'+t.toLocaleString();showToast('✅ ND INSTANT=$'+t.toLocaleString());
+  } else if(w==='totalsales'){
+    const i=parseFloat((document.getElementById('nd-instant').value||'0').replace(/[$,]/g,''))||0;
+    const o=parseFloat((document.getElementById('nd-online').value||'0').replace(/[$,]/g,''))||0;
+    document.getElementById('nd-totalsales').value='$'+(i+o).toLocaleString();showToast('✅ ND TOTAL SALES=$'+(i+o));
+  } else if(w==='lotto'){
+    const a=parseFloat(document.getElementById('nd-lotto-a').value)||0;
+    const b=parseFloat(document.getElementById('nd-lotto-b').value)||0;
+    document.getElementById('nd-lottopaid').value='$'+(a+b).toLocaleString();showToast('✅ ND LOTTO=$'+(a+b));
+  } else if(w==='total'){
+    const ts=parseFloat((document.getElementById('nd-totalsales').value||'0').replace(/[$,]/g,''))||0;
+    const lp=parseFloat((document.getElementById('nd-lottopaid').value||'0').replace(/[$,]/g,''))||0;
+    document.getElementById('nd-total').value='$'+(ts-lp).toLocaleString();showToast('✅ ND TOTAL=$'+(ts-lp));
+  }
+}
+
+// SAVE
+function saveData(){
+  const date=document.getElementById('settle-date').value;const cells={};
+  document.querySelectorAll('input[data-id]').forEach(inp=>{if(!inp.dataset.id.startsWith('nd-'))cells[inp.dataset.id]=inp.value;});
+  try{const k='ls_'+(date||'draft');localStorage.setItem(k,JSON.stringify({date,cells}));localStorage.setItem('ls_last',k);alert('✅ Saved!');}catch(e){alert('Save failed');}
+}
+function saveNextDay(){
+  const date=document.getElementById('settle-date').value;
+  const tomorrow=date?new Date(new Date(date).getTime()+86400000).toISOString().split('T')[0]:'next-day';
+  const cells={};
+  document.querySelectorAll('input[data-id]').forEach(inp=>{if(inp.dataset.id.startsWith('nd-'))cells[inp.dataset.id]=inp.value;});
+  try{localStorage.setItem('ls_'+tomorrow,JSON.stringify({date:tomorrow,cells}));localStorage.setItem('ls_last','ls_'+tomorrow);alert('✅ Next day saved for '+tomorrow+'!');}catch(e){alert('Save failed');}
+}
+function loadData(key){
+  try{
+    const raw=localStorage.getItem(key);if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.date)document.getElementById('settle-date').value=d.date;
+    Object.entries(d.cells||{}).forEach(([id,v])=>{
+      const inp=document.querySelector('[data-id="'+id+'"]');
+      if(inp&&v){inp.value=v;if(inp.classList.contains('cell'))inp.classList.add('has-val');}
+    });
+  }catch(e){}
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+function setNum(txt,cls){const el=document.getElementById('vp-num');el.textContent=txt;el.className='vp-heard-num'+(cls?' '+cls:'');}
+function setStat(msg,cls){const el=document.getElementById('vp-stat');el.textContent=msg;el.className='vp-stat '+cls;}
+
+function init(){
+  document.getElementById('settle-date').value=new Date().toISOString().split('T')[0];
+  buildTables();buildOrder();
+  const lk=localStorage.getItem('ls_last');if(lk)loadData(lk);
+}
+init();
+</script>
+</body>
+</html>
